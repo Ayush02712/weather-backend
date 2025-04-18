@@ -14,7 +14,11 @@ mongoose.connect(process.env.MONGODB_URI)
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
-db.once("open", () => console.log("✅ Connected to MongoDB"));
+db.once("open", () => {
+  console.log("✅ Connected to MongoDB");
+  console.log("DB name:", mongoose.connection.name); // ← Add this line here
+});
+
 
 const app = express();
 
@@ -27,11 +31,14 @@ const reportSchema = new mongoose.Schema({
   magnitude: Number,
   time: Date,
   description: String,
+  latitude: Number,      // 🆕 Added field
+  longitude: Number,     // 🆕 Added field
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
 
 const Report = mongoose.model("Report", reportSchema);
 
@@ -92,11 +99,14 @@ app.get("/api/reports", async (req, res) => {
 
 // ✅ POST a new felt report
 app.post("/api/reports", async (req, res) => {
-  const { location, magnitude, time, description } = req.body;
-  const report = new Report({ location, magnitude, time, description });
+  console.log("Received report:", req.body);
+  const { location, magnitude, time, description, latitude, longitude } = req.body;
+const report = new Report({ location, magnitude, time, description, latitude, longitude });
+
 
   try {
     const saved = await report.save();
+    console.log("Saved report:", saved);
     res.status(201).json(saved);
   } catch (err) {
     res.status(400).json({ message: "Error saving report", error: err.message });
